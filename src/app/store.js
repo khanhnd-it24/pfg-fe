@@ -1,8 +1,27 @@
-import { configureStore } from '@reduxjs/toolkit';
-import counterReducer from '../features/counter/counterSlice';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import { connectRouter, routerMiddleware } from 'connected-react-router';
+import { history } from 'utils/history';
+import createSagaMiddleware from 'redux-saga';
+import rootSaga from './rootSaga';
 
-export const store = configureStore({
-  reducer: {
-    counter: counterReducer,
-  },
+const rootReducer = combineReducers({
+  router: connectRouter(history),
 });
+
+
+const sagaMiddleware = createSagaMiddleware();
+
+const configStore = () => {
+  const store = configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: false,
+      }).concat(sagaMiddleware, routerMiddleware(history)),
+  });
+  sagaMiddleware.run(rootSaga);
+  return store;
+};
+const store = configStore();
+
+export default store;
